@@ -1,5 +1,5 @@
 //Packages
-import 'package:chatify_app/widgets/custom_list_view_title.dart';
+import 'package:chatify_app/pages/chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:get_it/get_it.dart';
@@ -10,11 +10,18 @@ import '../providers/chats_page_provider.dart';
 
 //Widgets
 import '../widgets/top_bar.dart';
+import '../widgets/custom_list_view_title.dart';
+
+//Services
+import '../services/navigation_service.dart';
 
 //Models
 import '../models/chat.dart';
 import '../models/chat_user.dart';
 import '../models/chat_message.dart';
+
+//Pages
+import '../pages/chat_page.dart';
 
 class ChatsPage extends StatefulWidget {
   @override
@@ -29,12 +36,14 @@ class _ChatsPageState extends State<ChatsPage> {
 
   late AuthenticationProvider _auth;
   late ChatsPageProvider _pageProvider;
+  late NavigationService _navigationService;
 
   @override
   Widget build(BuildContext context) {
     _deviceHeight = MediaQuery.of(context).size.height;
     _deviceWidth = MediaQuery.of(context).size.width;
     _auth = Provider.of<AuthenticationProvider>(context);
+    _navigationService = GetIt.instance.get<NavigationService>();
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<ChatsPageProvider>(
@@ -53,7 +62,7 @@ class _ChatsPageState extends State<ChatsPage> {
         height: _deviceHeight * 0.95,
         width: _deviceWidth,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -124,6 +133,8 @@ class _ChatsPageState extends State<ChatsPage> {
         imagePath: _chat.imageURL(),
         isActive: _isActive,
         isActivity: _chat.activity,
-        onTap: () {});
+        onTap: () {
+          _navigationService.navigateToPage(ChatPage(chat: _chat));
+        });
   }
 }
