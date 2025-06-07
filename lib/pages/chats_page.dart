@@ -6,7 +6,7 @@ import 'package:get_it/get_it.dart';
 
 //Providers
 import '../providers/authentication_provider.dart';
-import '../providers/chat_page_provider.dart';
+import '../providers/chats_page_provider.dart';
 
 //Widgets
 import '../widgets/top_bar.dart';
@@ -14,7 +14,7 @@ import '../widgets/top_bar.dart';
 //Models
 import '../models/chat.dart';
 import '../models/chat_user.dart';
-import '../models/chats_message.dart';
+import '../models/chat_message.dart';
 
 class ChatsPage extends StatefulWidget {
   @override

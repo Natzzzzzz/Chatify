@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import '../widgets/rounded_image.dart';
 
 //Models
-import '../models/chats_message.dart';
+import '../models/chat_message.dart';
 import '../models/chat_user.dart';
 
 class CustomListViewTileWithActivity extends StatelessWidget {

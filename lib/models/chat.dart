@@ -1,9 +1,9 @@
 import '../models/chat_user.dart';
-import '../models/chats_message.dart';
+import '../models/chat_message.dart';
 
 class Chat {
   final String uid;
-  final String currentUserID;
+  final String currentUserUid;
   final bool activity;
   final bool group;
   final List<ChatUser> members;
@@ -11,14 +11,15 @@ class Chat {
 
   late final List<ChatUser> _recepients;
 
-  Chat(
-      {required this.uid,
-      required this.currentUserID,
-      required this.activity,
-      required this.group,
-      required this.members,
-      required this.messages}) {
-    _recepients = members.where((_i) => _i.uid != currentUserID).toList();
+  Chat({
+    required this.uid,
+    required this.currentUserUid,
+    required this.members,
+    required this.messages,
+    required this.activity,
+    required this.group,
+  }) {
+    _recepients = members.where((_i) => _i.uid != currentUserUid).toList();
   }
 
   List<ChatUser> recepients() {
@@ -26,9 +27,8 @@ class Chat {
   }
 
   String title() {
-    print(_recepients.first.name);
     return !group
-        ? "_recepients.first.name"
+        ? _recepients.first.name
         : _recepients.map((_user) => _user.name).join(", ");
   }
 

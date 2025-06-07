@@ -14,7 +14,7 @@ import '../providers/authentication_provider.dart';
 //Models
 import '../models/chat.dart';
 import '../models/chat_user.dart';
-import '../models/chats_message.dart';
+import '../models/chat_message.dart';
 
 class ChatsPageProvider extends ChangeNotifier {
   AuthenticationProvider _auth;
@@ -23,7 +23,7 @@ class ChatsPageProvider extends ChangeNotifier {
 
   List<Chat>? chats;
 
-  late StreamSubscription _chatStream;
+  late StreamSubscription _chatsStream;
 
   ChatsPageProvider(this._auth) {
     _db = GetIt.instance.get<DatabaseService>();
@@ -32,32 +32,30 @@ class ChatsPageProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    _chatStream.cancel();
+    _chatsStream.cancel();
     super.dispose();
   }
 
   void getChats() async {
     try {
-      _chatStream =
+      _chatsStream =
           _db.getChatsForUser(_auth.user.uid).listen((_snapshot) async {
         chats = await Future.wait(
           _snapshot.docs.map(
             (_d) async {
               Map<String, dynamic> _chatData =
                   _d.data() as Map<String, dynamic>;
-              //Get users in chat
+              //Get Users In Chat
               List<ChatUser> _members = [];
-              List<dynamic>? memberList = _chatData["member"];
-              if (memberList != null) {
-                for (var _uid in memberList) {
-                  DocumentSnapshot _userSnapshot = await _db.getUser(_uid);
-                  Map<String, dynamic> _userData =
-                      _userSnapshot.data() as Map<String, dynamic>;
-                  _userData["uid"] = _userSnapshot.id;
-                  _members.add(ChatUser.fromJSON(_userData));
-                }
+              for (var _uid in _chatData["members"]) {
+                DocumentSnapshot _userSnapshot = await _db.getUser(_uid);
+                Map<String, dynamic> _userData =
+                    _userSnapshot.data() as Map<String, dynamic>;
+                _userData["uid"] = _userSnapshot.id;
+                _members.add(
+                  ChatUser.fromJSON(_userData),
+                );
               }
-
               //Get Last Message For Chat
               List<ChatMessage> _messages = [];
               QuerySnapshot _chatMessage =
@@ -68,14 +66,15 @@ class ChatsPageProvider extends ChangeNotifier {
                 ChatMessage _message = ChatMessage.fromJSON(_messageData);
                 _messages.add(_message);
               }
-              //Return chat instance
+              //Return Chat Instance
               return Chat(
-                  uid: _d.id,
-                  currentUserID: _auth.user.uid,
-                  activity: _chatData["is_activity"],
-                  group: _chatData["is_group"],
-                  members: _members,
-                  messages: _messages);
+                uid: _d.id,
+                currentUserUid: _auth.user.uid,
+                members: _members,
+                messages: _messages,
+                activity: _chatData["is_activity"],
+                group: _chatData["is_group"],
+              );
             },
           ).toList(),
         );
