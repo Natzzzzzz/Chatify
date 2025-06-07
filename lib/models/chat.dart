@@ -26,8 +26,9 @@ class Chat {
   }
 
   String title() {
+    print(_recepients.first.name);
     return !group
-        ? _recepients.first.name
+        ? "_recepients.first.name"
         : _recepients.map((_user) => _user.name).join(", ");
   }
 

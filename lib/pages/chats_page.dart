@@ -6,9 +6,15 @@ import 'package:get_it/get_it.dart';
 
 //Providers
 import '../providers/authentication_provider.dart';
+import '../providers/chat_page_provider.dart';
 
 //Widgets
 import '../widgets/top_bar.dart';
+
+//Models
+import '../models/chat.dart';
+import '../models/chat_user.dart';
+import '../models/chats_message.dart';
 
 class ChatsPage extends StatefulWidget {
   @override
@@ -22,59 +28,102 @@ class _ChatsPageState extends State<ChatsPage> {
   late double _deviceWidth;
 
   late AuthenticationProvider _auth;
+  late ChatsPageProvider _pageProvider;
 
   @override
   Widget build(BuildContext context) {
     _deviceHeight = MediaQuery.of(context).size.height;
     _deviceWidth = MediaQuery.of(context).size.width;
     _auth = Provider.of<AuthenticationProvider>(context);
-    return _buildUI();
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ChatsPageProvider>(
+            create: (_) => ChatsPageProvider(_auth))
+      ],
+      child: _buildUI(),
+    );
   }
 
   Widget _buildUI() {
-    return Container(
-      padding: EdgeInsets.symmetric(
-          horizontal: _deviceWidth * 0.03, vertical: _deviceHeight * 0.04),
-      height: _deviceHeight * 0.95,
-      width: _deviceWidth,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          TopBar(
-            'Chats',
-            primaryAction: IconButton(
-              onPressed: () {
-                _auth.logOut();
-              },
-              icon: Icon(
-                Icons.logout,
-                color: Color.fromRGBO(0, 82, 218, 1.0),
+    return Builder(builder: (BuildContext _context) {
+      _pageProvider = _context.watch<ChatsPageProvider>();
+      return Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: _deviceWidth * 0.03, vertical: _deviceHeight * 0.04),
+        height: _deviceHeight * 0.95,
+        width: _deviceWidth,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            TopBar(
+              'Chats',
+              primaryAction: IconButton(
+                onPressed: () {
+                  _auth.logOut();
+                },
+                icon: Icon(
+                  Icons.logout,
+                  color: Color.fromRGBO(0, 82, 218, 1.0),
+                ),
               ),
             ),
-          ),
-          _chatList(),
-        ],
-      ),
-    );
+            _chatList(),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _chatList() {
+    List<Chat>? _chats = _pageProvider.chats;
     return Expanded(
-      child: _chatTile(),
+      child: (() {
+        if (_chats != null) {
+          if (_chats.length != 0) {
+            return ListView.builder(
+                itemCount: _chats.length,
+                itemBuilder: (BuildContext _context, int _index) {
+                  return _chatTile(_chats[_index]);
+                });
+          } else {
+            return Center(
+              child: Text(
+                "No chats found!",
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
+            );
+          }
+        } else {
+          return Center(
+            child: CircularProgressIndicator(
+              color: Colors.white,
+            ),
+          );
+        }
+      })(),
     );
   }
 
-  Widget _chatTile() {
+  Widget _chatTile(Chat _chat) {
+    List<ChatUser> _recepients = _chat.recepients();
+    bool _isActive = _recepients.any((_d) => _d.wasRecentlyActive());
+    String _subtitleText = "";
+    if (_chat.messages.isNotEmpty) {
+      _subtitleText = _chat.messages.first.type != MessageType.TEXT
+          ? "Media Attachment"
+          : _chat.messages.first.content;
+    }
     return CustomListViewTileWithActivity(
         height: _deviceHeight * 0.10,
-        title: "Hussain Mustafa",
-        subtitle: "Hello",
-        imagePath:
-            "https://www.cameo.com/cdn-cgi/image/fit=cover,format=auto,width=210,height=278/https://cdn.cameo.com/thumbnails/67b59723c0ee9f79d46798f2-processed.jpg",
-        isActive: true,
-        isActivity: false,
+        title: _chat.title(),
+        subtitle: _subtitleText,
+        imagePath: _chat.imageURL(),
+        isActive: _isActive,
+        isActivity: _chat.activity,
         onTap: () {});
   }
 }

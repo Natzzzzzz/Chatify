@@ -15,22 +15,12 @@ import './pages/register_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: "AIzaSyDDChZnHwik1A6e8Srrb5XW4CK_kTFTMQU",
-      appId: "1:483115328419:android:d58baf1e7e028847fcb016",
-      messagingSenderId: "483115328419",
-      projectId: "chatify-app-86e2c",
-      storageBucket: "chatify-app-86e2c.firebasestorage.app",
-    ),
-  );
+  await Firebase.initializeApp(); // KHÔNG cần truyền FirebaseOptions nữa
 
   runApp(
     SplashPage(
       key: UniqueKey(),
       onInitializationComplete: () {
-        // Navigate to the main application
         runApp(
           MainApp(),
         );
