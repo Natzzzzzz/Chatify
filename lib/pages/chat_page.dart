@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 //Widgets
 import '../widgets/top_bar.dart';
-import '../widgets/custom_list_view_title.dart';
+import '../widgets/custom_list_view_tiles.dart';
 import '../widgets/custom_input_fields.dart';
 
 //Services
@@ -74,23 +74,69 @@ class _ChatPageState extends State<ChatPage> {
               children: [
                 TopBar(
                   this.widget.chat.title(),
-                  fontSize: 10,
+                  fontSize: 15,
                   primaryAction: IconButton(
                     onPressed: () {},
                     icon: Icon(Icons.delete),
                     color: Color.fromRGBO(0, 82, 218, 1.0),
                   ),
                   secondaryAction: IconButton(
-                    onPressed: () {},
+                    onPressed: () {
+                      _pageProvider.goBack();
+                    },
                     icon: Icon(Icons.arrow_back),
                     color: Color.fromRGBO(0, 82, 218, 1.0),
                   ),
-                )
+                ),
+                _messagesListView(),
               ],
             ),
           ),
         ),
       );
     });
+  }
+
+  Widget _messagesListView() {
+    if (_pageProvider.messages != null) {
+      if (_pageProvider.messages!.length != 0) {
+        return Container(
+          height: _deviceHeight * 0.74,
+          child: ListView.builder(
+              itemCount: _pageProvider.messages!.length,
+              itemBuilder: (BuildContext _context, int _index) {
+                ChatMessage _message = _pageProvider.messages![_index];
+                bool _isOwnMessage = _message.senderID == _auth.user.uid;
+                return Container(
+                  child: CustomChatListViewTile(
+                      width: _deviceWidth * 0.8,
+                      deviceHeight: _deviceHeight,
+                      isOwnMessage: _isOwnMessage,
+                      message: _message,
+                      sender: this
+                          .widget
+                          .chat
+                          .members
+                          .where((_m) => _m.uid == _message.senderID)
+                          .first),
+                );
+              }),
+        );
+      } else {
+        return Align(
+          alignment: Alignment.center,
+          child: Text(
+            "Be the first to say Hi!",
+            style: TextStyle(color: Colors.white),
+          ),
+        );
+      }
+    } else {
+      return Center(
+        child: CircularProgressIndicator(
+          color: Colors.white,
+        ),
+      );
+    }
   }
 }

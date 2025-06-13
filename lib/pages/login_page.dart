@@ -88,7 +88,7 @@ class _LoginPageState extends State<LoginPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CustomTextFormField(
-                  onSave: (_value) {
+                  onSaved: (_value) {
                     setState(() {
                       _email = _value;
                     });
@@ -98,7 +98,7 @@ class _LoginPageState extends State<LoginPage> {
                   hintText: 'Email',
                   obscureText: false),
               CustomTextFormField(
-                  onSave: (_value) {
+                  onSaved: (_value) {
                     setState(() {
                       _password = _value;
                     });
@@ -119,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
         onPressed: () {
           if (_loginFormKey.currentState!.validate()) {
             _loginFormKey.currentState!.save();
-            _auth.loginUsingEmailAndPasswrod(_email!, _password!);
+            _auth.loginUsingEmailAndPassword(_email!, _password!);
           }
         });
   }

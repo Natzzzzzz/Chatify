@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
 class CustomTextFormField extends StatelessWidget {
-  final Function(String) onSave;
+  final Function(String) onSaved;
   final String regEx;
   final String hintText;
   final bool obscureText;
 
   CustomTextFormField(
-      {required this.onSave,
+      {required this.onSaved,
       required this.regEx,
       required this.hintText,
       required this.obscureText});
@@ -15,7 +15,7 @@ class CustomTextFormField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      onSaved: (_value) => onSave(_value!),
+      onSaved: (_value) => onSaved(_value!),
       cursorColor: Colors.white,
       style: TextStyle(color: Colors.white),
       obscureText: obscureText,

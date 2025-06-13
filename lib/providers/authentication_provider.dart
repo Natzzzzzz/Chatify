@@ -50,7 +50,7 @@ class AuthenticationProvider extends ChangeNotifier {
     );
   }
 
-  Future<void> loginUsingEmailAndPasswrod(
+  Future<void> loginUsingEmailAndPassword(
       String _email, String _password) async {
     try {
       await _auth.signInWithEmailAndPassword(

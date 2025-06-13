@@ -124,7 +124,7 @@ class _RegisterPageState extends State<RegisterPage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             CustomTextFormField(
-                onSave: (_value) {
+                onSaved: (_value) {
                   setState(() {
                     _name = _value;
                   });
@@ -133,7 +133,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 hintText: "Name",
                 obscureText: false),
             CustomTextFormField(
-                onSave: (_value) {
+                onSaved: (_value) {
                   setState(() {
                     _email = _value;
                   });
@@ -143,7 +143,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 hintText: "Email",
                 obscureText: false),
             CustomTextFormField(
-                onSave: (_value) {
+                onSaved: (_value) {
                   setState(() {
                     _password = _value;
                   });
@@ -170,12 +170,25 @@ class _RegisterPageState extends State<RegisterPage> {
                 _email!, _password!);
             print("Result from register: $_uid (${_uid.runtimeType})");
             print('_uid: $_uid, _email: $_email, _name: $_name');
-            String _imageURL =
-                "https://img.freepik.com/free-photo/portrait-man-looking-front-him_23-2148422271.jpg?semt=ais_hybrid&w=740";
-            // String? _imageURL = await _cloudStorageService
-            //     .saveUserImageToStorage(_uid!, _profileImage!);
             if (_uid != null) {
+              String _imageURL =
+                  "https://img.freepik.com/free-photo/portrait-man-looking-front-him_23-2148422271.jpg?semt=ais_hybrid&w=740";
+              // String _imageURL = _profileImage != null
+              //     ? (await _cloudStorageService.saveUserImageToStorage(
+              //             _uid, _profileImage!)) ??
+              //         "https://img.freepik.com/free-photo/portrait-man-looking-front-him_23-2148422271.jpg?semt=ais_hybrid&w=740"
+              //     : "https://img.freepik.com/free-photo/portrait-man-looking-front-him_23-2148422271.jpg?semt=ais_hybrid&w=740";
               await _db.createUser(_uid, _email!, _name!, _imageURL);
+              await _auth.logOut();
+              await _auth.loginUsingEmailAndPassword(_email!, _password!);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text("Email đã tồn tại, vui lòng chọn email khác."),
+                  backgroundColor: Colors.red,
+                ),
+              );
+              return;
             }
           }
         });
