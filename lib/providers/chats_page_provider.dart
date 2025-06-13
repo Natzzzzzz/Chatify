@@ -17,6 +17,7 @@ import '../models/chat_user.dart';
 import '../models/chat_message.dart';
 
 class ChatsPageProvider extends ChangeNotifier {
+  bool _disposed = false;
   AuthenticationProvider _auth;
 
   late DatabaseService _db;
@@ -32,6 +33,7 @@ class ChatsPageProvider extends ChangeNotifier {
 
   @override
   void dispose() {
+    _disposed = true;
     _chatsStream.cancel();
     super.dispose();
   }
@@ -78,7 +80,9 @@ class ChatsPageProvider extends ChangeNotifier {
             },
           ).toList(),
         );
-        notifyListeners();
+        if (!_disposed) {
+          notifyListeners();
+        }
       });
     } catch (e) {
       print(e);
