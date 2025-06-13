@@ -79,6 +79,15 @@ class ChatPageProvider extends ChangeNotifier {
               }
             },
           );
+          // Future.delayed(Duration(milliseconds: 100), () {
+          //   if (_messagesListViewController.hasClients) {
+          //     _messagesListViewController.animateTo(
+          //       _messagesListViewController.position.maxScrollExtent,
+          //       duration: Duration(milliseconds: 300),
+          //       curve: Curves.easeOut,
+          //     );
+          //   }
+          // });
         },
       );
     } catch (e) {

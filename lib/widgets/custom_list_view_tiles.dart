@@ -90,7 +90,7 @@ class CustomChatListViewTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 10, left: 10, right: 10),
       width: width,
       child: Row(
         mainAxisSize: MainAxisSize.max,
@@ -102,7 +102,7 @@ class CustomChatListViewTile extends StatelessWidget {
               ? RoundedImageNetwork(
                   key: UniqueKey(),
                   imagePath: sender.imageURL,
-                  size: width * 0.04)
+                  size: width * 0.1)
               : Container(),
           SizedBox(
             width: width * 0.045,
@@ -113,7 +113,11 @@ class CustomChatListViewTile extends StatelessWidget {
                   message: message,
                   height: deviceHeight * 0.06,
                   width: width)
-              : Text(message.content),
+              : ImageMessageBubble(
+                  isOwnMessage: isOwnMessage,
+                  message: message,
+                  height: deviceHeight * 0.3,
+                  width: width * 0.55),
         ],
       ),
     );
