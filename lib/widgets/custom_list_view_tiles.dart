@@ -6,9 +6,9 @@ import 'package:flutter/rendering.dart';
 import '../widgets/rounded_image.dart';
 import '../widgets/message_bubbles.dart';
 
-//Models
-import '../models/chat_message.dart';
-import '../models/chat_user.dart';
+//Domain
+import '../features/chat/domain/entities/chat_user.dart';
+import '../features/chat/domain/entities/chat_message.dart';
 
 class CustomListViewTile extends StatelessWidget {
   final double height;

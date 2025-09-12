@@ -9,7 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 
 //Pages
-import '../pages/chats_page.dart';
+import '../features/chat/presentation/pages/list_chat_page.dart';
 import '../pages/users_page.dart';
 
 class HomePage extends StatefulWidget {

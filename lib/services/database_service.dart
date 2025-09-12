@@ -1,8 +1,8 @@
 //Packages
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-//Models
-import '../models/chat_message.dart';
+//Model
+import '../features/chat/data/models/chat_message_model.dart';
 
 const String USER_COLLECTION = "Users";
 const String CHAT_COLLECTION = "Chats";
@@ -70,7 +70,8 @@ class DatabaseService {
         .snapshots();
   }
 
-  Future<void> addMessageToChat(String _chatID, ChatMessage _message) async {
+  Future<void> addMessageToChat(
+      String _chatID, ChatMessageModel _message) async {
     try {
       await _db
           .collection(CHAT_COLLECTION)

@@ -11,19 +11,22 @@ import '../services/navigation_service.dart';
 import '../providers/authentication_provider.dart';
 
 //Models
-import '../models/chat_user.dart';
-import '../models/chat.dart';
+import '../features/chat/data/models/chat_model.dart';
+import '../features/chat/data/models/chat_user_model.dart';
+
+//Domain
+import '../features/chat/domain/entities/chat_user.dart';
 
 //Pages
-import '../pages/chat_page.dart';
+import '../features/chat/presentation/pages/chat_page.dart';
 
 class UsersPageProvider extends ChangeNotifier {
   AuthenticationProvider _auth;
   late DatabaseService _db;
   late NavigationService _nag;
 
-  List<ChatUser>? users;
-  late List<ChatUser> _selectedUsers;
+  List<ChatUserModel>? users;
+  late List<ChatUserModel> _selectedUsers;
 
   List<ChatUser> get selectedUsers {
     return _selectedUsers;
@@ -52,7 +55,7 @@ class UsersPageProvider extends ChangeNotifier {
                   Map<String, dynamic> _data =
                       _doc.data() as Map<String, dynamic>;
                   _data["uid"] = _doc.id;
-                  return ChatUser.fromJSON(_data);
+                  return ChatUserModel.fromJson(_data);
                 },
               )
               .where((user) => user.uid != _auth.user.uid)
@@ -65,11 +68,11 @@ class UsersPageProvider extends ChangeNotifier {
     }
   }
 
-  void updateSelectedUsers(ChatUser _user) {
-    if (_selectedUsers.contains(_user)) {
-      _selectedUsers.remove(_user);
+  void updateSelectedUsers(ChatUser user) {
+    if (selectedUsers.contains(user)) {
+      selectedUsers.remove(user);
     } else {
-      _selectedUsers.add(_user);
+      selectedUsers.add(user);
     }
     notifyListeners();
   }
@@ -87,18 +90,18 @@ class UsersPageProvider extends ChangeNotifier {
         "members": _membersIDs,
       });
       //Navigate to Chat Page
-      List<ChatUser> _members = [];
+      List<ChatUserModel> _members = [];
       for (var _uid in _membersIDs) {
         DocumentSnapshot _userSnapshot = await _db.getUser(_uid);
         Map<String, dynamic> _userData =
             _userSnapshot.data() as Map<String, dynamic>;
         _userData["uid"] = _userSnapshot.id;
         _members.add(
-          ChatUser.fromJSON(_userData),
+          ChatUserModel.fromJson(_userData),
         );
       }
       ChatPage _chatPage = ChatPage(
-        chat: Chat(
+        chat: ChatModel(
             uid: _doc!.id,
             currentUserUid: _auth.user.uid,
             members: _members,

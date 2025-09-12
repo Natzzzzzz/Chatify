@@ -14,8 +14,11 @@ import '../widgets/rounded_button.dart';
 import '../providers/authentication_provider.dart';
 import '../providers/users_page_provider.dart';
 
-//Models
-import '../models/chat_user.dart';
+//Domain
+import '../features/chat/domain/entities/chat_user.dart';
+
+//Extentions
+import '../features/chat/domain/extensions/chat_user_extension.dart';
 
 class UsersPage extends StatefulWidget {
   @override
@@ -99,7 +102,7 @@ class _UsersPageState extends State<UsersPage> {
               return CustomListViewTile(
                 height: _deviceHeight * 0.10,
                 title: _users[_index].name,
-                subtitle: "Last Active: ${_users[_index].lastdayActive()}",
+                subtitle: "Last Active: ${_users[_index].lastDayActive()}",
                 imagePath: _users[_index].imageURL,
                 isActive: _users[_index].wasRecentlyActive(),
                 isSelected: _pageProvider.selectedUsers.contains(

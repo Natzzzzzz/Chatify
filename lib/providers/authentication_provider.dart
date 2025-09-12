@@ -1,93 +1,102 @@
-import 'package:chatify_app/models/chat_user.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_it/get_it.dart';
 
-//Services
+// Services
 import '../services/database_service.dart';
 import '../services/navigation_service.dart';
 
-//Models
-import '../models/chat_user.dart';
+// Models
+import '../features/chat/data/models/chat_user_model.dart';
 
 class AuthenticationProvider extends ChangeNotifier {
-  late final FirebaseAuth _auth;
-  late final NavigationService _navigationService;
-  late final DatabaseService _databaseService;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final NavigationService _navigationService =
+      GetIt.instance.get<NavigationService>();
+  final DatabaseService _databaseService =
+      GetIt.instance.get<DatabaseService>();
 
-  late ChatUser user;
+  late ChatUserModel _user;
+  ChatUserModel get user => _user;
 
   AuthenticationProvider() {
-    _auth = FirebaseAuth.instance;
-    _navigationService = GetIt.instance.get<NavigationService>();
-    _databaseService = GetIt.instance.get<DatabaseService>();
-    // _auth.signOut();
-    _auth.authStateChanges().listen(
-      (_user) {
-        if (_user != null) {
-          _databaseService.updateUserLastSeenTime(_user.uid);
-          _databaseService.getUser(_user.uid).then(
-            (_snapshot) {
-              Map<String, dynamic> _userData =
-                  _snapshot.data()! as Map<String, dynamic>;
-              user = ChatUser.fromJSON(
-                {
-                  "uid": _user.uid,
-                  "email": _userData["email"],
-                  "name": _userData["name"],
-                  "last_active": _userData["last_active"],
-                  "image": _userData["image"],
-                },
-              );
-              _navigationService.removeAndNavigateToRoute('/home');
-              print('home');
-            },
-          );
-        } else {
-          _navigationService.removeAndNavigateToRoute('/login');
-        }
-      },
-    );
-  }
-
-  Future<void> loginUsingEmailAndPassword(
-      String _email, String _password) async {
-    try {
-      await _auth.signInWithEmailAndPassword(
-          email: _email, password: _password);
-    } on FirebaseAuthException {
-      print("Error logging user into Firebase");
-    } catch (e) {
-      print(e);
+    if (_auth != null) {
+      _auth.authStateChanges().listen(_onAuthStateChanged);
     }
   }
 
+  /// Lắng nghe thay đổi trạng thái đăng nhập
+  Future<void> _onAuthStateChanged(User? firebaseUser) async {
+    if (firebaseUser != null) {
+      await _databaseService.updateUserLastSeenTime(firebaseUser.uid);
+
+      final snapshot = await _databaseService.getUser(firebaseUser.uid);
+      final userData = snapshot.data() as Map<String, dynamic>;
+
+      _user = ChatUserModel.fromJson({
+        "uid": firebaseUser.uid,
+        "email": userData["email"],
+        "name": userData["name"],
+        "last_active": userData["last_active"],
+        "image": userData["image"],
+      });
+
+      notifyListeners();
+      _navigationService.removeAndNavigateToRoute('/home');
+    } else {
+      _user = ChatUserModel(
+        uid: '',
+        name: '',
+        email: '',
+        imageURL: '',
+        lastActive: DateTime.now(),
+      );
+      notifyListeners();
+      _navigationService.removeAndNavigateToRoute('/login');
+    }
+  }
+
+  /// Đăng nhập bằng email và password
+  Future<void> loginUsingEmailAndPassword(String email, String password) async {
+    try {
+      await _auth.signInWithEmailAndPassword(email: email, password: password);
+    } on FirebaseAuthException catch (e) {
+      debugPrint("FirebaseAuthException: ${e.message}");
+    } catch (e) {
+      debugPrint("Unknown error during login: $e");
+    }
+  }
+
+  /// Đăng ký người dùng mới
   Future<String?> registerUserUsingEmailAndPassword(
       String email, String password) async {
     try {
-      UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(email: email, password: password);
+      final userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      User? user = userCredential.user;
-
+      final user = userCredential.user;
       if (user != null) {
-        print("Firebase UID: ${user.uid}");
+        debugPrint("Firebase UID: ${user.uid}");
         return user.uid;
-      } else {
-        print("User is null despite successful credential.");
-        return null;
       }
+      return null;
+    } on FirebaseAuthException catch (e) {
+      debugPrint("FirebaseAuthException during register: ${e.message}");
+      return null;
     } catch (e) {
-      print("Error during register: $e");
+      debugPrint("Unknown error during register: $e");
       return null;
     }
   }
 
+  /// Đăng xuất
   Future<void> logOut() async {
     try {
       await _auth.signOut();
     } catch (e) {
-      print(e);
+      debugPrint("Error signing out: $e");
     }
   }
 }
