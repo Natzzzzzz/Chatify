@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'chat_event.dart';
@@ -42,8 +43,15 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
     await emit.forEach<List<ChatMessage>>(
       getMessages(chatId),
-      onData: (messages) =>
-          state.copyWith(messages: messages, isLoading: false),
+      onData: (messages) {
+        // emit state
+        final newState = state.copyWith(messages: messages, isLoading: false);
+
+        // scroll sau khi emit
+        _scrollToBottom();
+
+        return newState;
+      },
       onError: (_, __) => state.copyWith(isLoading: false),
     );
   }
@@ -68,15 +76,40 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   Future<void> _onSendImageMessage(
-      SendImageMessage event, Emitter<ChatState> emit) async {
-    final newMessage = ChatMessage(
-      senderID: auth.user.uid,
-      type: MessageType.IMAGE,
-      content: "[Image]",
-      sentTime: DateTime.now(),
-    );
+    SendImageMessage event,
+    Emitter<ChatState> emit,
+  ) async {
+    try {
+      // mở thư viện ảnh
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        withData: true,
+      );
 
-    await repository.sendMessage(chatId, newMessage);
+      if (result != null && result.files.isNotEmpty) {
+        final file = result.files.first;
+
+        // upload file lên storage
+        final downloadUrl = await repository.uploadChatImage(
+          chatId,
+          auth.user.uid,
+          file,
+        );
+
+        // tạo message
+        final newMessage = ChatMessage(
+          senderID: auth.user.uid,
+          type: MessageType.IMAGE,
+          content: downloadUrl,
+          sentTime: DateTime.now(),
+        );
+
+        // gửi message
+        await repository.sendMessage(chatId, newMessage);
+      }
+    } catch (e) {
+      emit(state.copyWith(errorMessage: e.toString()));
+    }
   }
 
   void _onDeleteChat(DeleteChat event, Emitter<ChatState> emit) async {
@@ -85,7 +118,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   }
 
   void _onGoBack(GoBack event, Emitter<ChatState> emit) {
-    navigation.goBack();
+    navigation.goBack(true);
   }
 
   void _scrollToBottom() {

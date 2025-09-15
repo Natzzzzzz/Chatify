@@ -28,10 +28,8 @@ class ChatsBloc extends Bloc<ChatsEvent, ChatsState> {
           chats: chats,
         ),
       ),
-      onError: (error, _) => state.copyWith(
-        isLoading: false,
-        errorMessage: error.toString(),
-      ),
+      onError: (error, _) =>
+          state.copyWith(isLoading: false, errorMessage: error.toString()),
     );
   }
 }

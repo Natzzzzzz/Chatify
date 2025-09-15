@@ -11,19 +11,13 @@ class NavigationService {
     navigatorKey.currentState?.pushNamed(_route);
   }
 
-  void navigateToPage(Widget _page) {
-    navigatorKey.currentState?.push(
-      MaterialPageRoute(
-        builder: (BuildContext _context) {
-          return _page;
-        },
-      ),
+  Future<T?> navigateToPage<T>(Widget page) {
+    return navigatorKey.currentState!.push<T>(
+      MaterialPageRoute(builder: (_) => page),
     );
   }
 
-  void goBack() {
-    if (navigatorKey.currentState?.canPop() ?? false) {
-      navigatorKey.currentState?.pop();
-    }
+  void goBack<T extends Object?>([T? result]) {
+    navigatorKey.currentState?.pop(result);
   }
 }

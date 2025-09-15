@@ -1,3 +1,5 @@
+import 'package:file_picker/file_picker.dart';
+
 import '../../domain/entities/chat_message.dart';
 import '../../domain/repositories/chat_repository.dart';
 import '../datasources/chat_remote_data_source.dart';
@@ -20,5 +22,11 @@ class ChatRepositoryImpl implements ChatRepository {
   @override
   Future<void> deleteChat(String chatId) {
     return remoteDataSource.deleteChat(chatId);
+  }
+
+  @override
+  Future<String> uploadChatImage(
+      String chatId, String userId, PlatformFile file) {
+    return remoteDataSource.uploadChatImage(chatId, userId, file);
   }
 }

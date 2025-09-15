@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:rxdart/rxdart.dart';
 import '../../domain/entities/chat.dart';
 import '../../domain/entities/chat_user.dart';
 import '../../domain/entities/chat_message.dart';
@@ -21,44 +22,49 @@ class ListChatRemoteDataSourceImpl implements ListChatRemoteDataSource {
         .collection('Chats')
         .where('members', arrayContains: userId)
         .snapshots()
-        .asyncMap((snapshot) async {
-      final chats = await Future.wait(snapshot.docs.map((doc) async {
+        .asyncExpand((snapshot) {
+      final chatStreams = snapshot.docs.map((doc) {
         final data = doc.data();
 
-        // Lấy thành viên
-        List<ChatUser> members = [];
-        for (var uid in data['members']) {
-          final userSnap = await firestore.collection('Users').doc(uid).get();
-          final userData = userSnap.data()!..['uid'] = userSnap.id;
-          members.add(ChatUserModel.fromJson(userData));
-        }
-
-        // Lấy tin nhắn cuối
-        List<ChatMessage> messages = [];
-        final lastMessageSnap = await firestore
+        // Stream tin nhắn cuối cùng (luôn update khi có thay đổi)
+        final messageStream = firestore
             .collection('Chats')
             .doc(doc.id)
             .collection('messages')
             .orderBy('sent_time', descending: true)
             .limit(1)
-            .get();
+            .snapshots()
+            .map((msgSnap) {
+          if (msgSnap.docs.isNotEmpty) {
+            return [
+              ChatMessageModel.fromJson(msgSnap.docs.first.data()),
+            ];
+          }
+          return <ChatMessage>[];
+        });
 
-        if (lastMessageSnap.docs.isNotEmpty) {
-          messages.add(
-            ChatMessageModel.fromJson(lastMessageSnap.docs.first.data()),
+        // Kết hợp với info user
+        return messageStream.asyncMap((messages) async {
+          final members = await Future.wait(
+            (data['members'] as List).map((uid) async {
+              final userSnap =
+                  await firestore.collection('Users').doc(uid).get();
+              final userData = userSnap.data()!..['uid'] = userSnap.id;
+              return ChatUserModel.fromJson(userData);
+            }),
           );
-        }
 
-        return ChatModel.fromFirestore(
-          id: doc.id,
-          data: data,
-          members: members,
-          messages: messages,
-          currentUserUid: userId,
-        );
-      }));
+          return ChatModel.fromFirestore(
+            id: doc.id,
+            data: data,
+            members: members,
+            messages: messages,
+            currentUserUid: userId,
+          );
+        });
+      });
 
-      return chats;
+      return Rx.combineLatestList(chatStreams);
     });
   }
 }

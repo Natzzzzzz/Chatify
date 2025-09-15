@@ -1,4 +1,5 @@
 //Packages
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -60,7 +61,8 @@ class _ChatPageState extends State<ChatPage> {
 
     // Khởi tạo Repository và Usecase
     final chatRepository = ChatRepositoryImpl(
-      ChatRemoteDataSourceImpl(FirebaseFirestore.instance),
+      ChatRemoteDataSourceImpl(
+          FirebaseFirestore.instance, FirebaseStorage.instance),
     );
     final getMessages = GetMessages(chatRepository);
 
@@ -191,7 +193,11 @@ class _ChatPageState extends State<ChatPage> {
       width: _deviceWidth * 0.65,
       child: CustomTextFormField(
         onSaved: (_value) {
-          context.read<ChatBloc>().add(UpdateCurrentMessage(_value ?? ""));
+          final message = _value?.trim();
+          if (message != null && message.isNotEmpty) {
+            context.read<ChatBloc>().add(UpdateCurrentMessage(message));
+            context.read<ChatBloc>().add(SendTextMessage(message));
+          }
         },
         regEx: r"^(?!\s*$).+",
         hintText: "Type a message",
@@ -209,8 +215,6 @@ class _ChatPageState extends State<ChatPage> {
         onPressed: () {
           if (_messageFormState.currentState!.validate()) {
             _messageFormState.currentState!.save();
-            final bloc = context.read<ChatBloc>();
-            bloc.add(SendTextMessage(bloc.state.currentMessage ?? ""));
             _messageFormState.currentState!.reset();
           }
         },
@@ -227,6 +231,7 @@ class _ChatPageState extends State<ChatPage> {
       child: FloatingActionButton(
         backgroundColor: const Color.fromRGBO(0, 82, 218, 1.0),
         onPressed: () {
+          // Dispatch event tới ChatBloc
           context.read<ChatBloc>().add(SendImageMessage());
         },
         child: const Icon(Icons.camera_enhance, color: Colors.white),

@@ -63,7 +63,7 @@ class _ChatsPageState extends State<ChatsPage> {
     return BlocProvider(
       create: (_) => ChatsBloc(
         getChats: getChats,
-      )..add(LoadChats(_auth.user!.uid)),
+      )..add(LoadChats(_auth.user.uid)),
       child: _buildUI(),
     );
   }
@@ -146,9 +146,9 @@ class _ChatsPageState extends State<ChatsPage> {
 
     return CustomListViewTileWithActivity(
       height: _deviceHeight * 0.10,
-      title: chat.title, // từ extension ChatExtension
+      title: chat.title,
       subtitle: subtitleText,
-      imagePath: chat.imageURL, // từ extension ChatExtension
+      imagePath: chat.imageURL,
       isActive: isActive,
       isActivity: chat.activity,
       onTap: () {
