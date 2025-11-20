@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import '/services/cloud_storage_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -10,15 +11,20 @@ abstract class ChatRemoteDataSource {
   Stream<List<ChatMessage>> getMessages(String chatId);
   Future<void> sendMessage(String chatId, ChatMessage message);
   Future<void> deleteChat(String chatId);
+
   Future<String> uploadChatImage(
-      String chatId, String userId, PlatformFile file);
+    String chatId,
+    String userId,
+    PlatformFile file, {
+    Function(double progress)? onProgress,
+  });
 }
 
 class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
   final FirebaseFirestore firestore;
-  final FirebaseStorage storage;
+  final CloudStorageService storageService; // ← Inject service
 
-  ChatRemoteDataSourceImpl(this.firestore, this.storage);
+  ChatRemoteDataSourceImpl(this.firestore, this.storageService);
 
   @override
   Stream<List<ChatMessage>> getMessages(String chatId) {
@@ -50,23 +56,31 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Future<void> deleteChat(String chatId) async {
+    // Delete Firestore data
     await firestore.collection("Chats").doc(chatId).delete();
+
+    // Delete Storage images
+    await storageService.deleteChatImages(chatId);
   }
 
   @override
   Future<String> uploadChatImage(
-      String chatId, String userId, PlatformFile file) async {
-    final ref = storage.ref().child(
-        "chats/$chatId/${DateTime.now().millisecondsSinceEpoch}_${file.name}");
+    String chatId,
+    String userId,
+    PlatformFile file, {
+    Function(double progress)? onProgress,
+  }) async {
+    final url = await storageService.saveChatImageToStorage(
+      chatId,
+      userId,
+      file,
+      onProgress: onProgress,
+    );
 
-    UploadTask uploadTask;
-    if (file.bytes != null) {
-      uploadTask = ref.putData(file.bytes!);
-    } else {
-      uploadTask = ref.putFile(File(file.path!));
+    if (url == null) {
+      throw Exception('Upload image failed');
     }
 
-    final snapshot = await uploadTask;
-    return await snapshot.ref.getDownloadURL();
+    return url;
   }
 }

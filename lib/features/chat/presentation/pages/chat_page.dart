@@ -10,6 +10,7 @@ import '../../../../widgets/custom_input_fields.dart';
 
 //Services
 import '../../../../services/navigation_service.dart';
+import '../../../../services/cloud_storage_service.dart';
 
 // Domain
 import '../../domain/entities/chat.dart';
@@ -60,9 +61,9 @@ class _ChatPageState extends State<ChatPage> {
     _auth = context.read<AuthenticationProvider>();
 
     // Khởi tạo Repository và Usecase
+    final cloudStorageService = CloudStorageService();
     final chatRepository = ChatRepositoryImpl(
-      ChatRemoteDataSourceImpl(
-          FirebaseFirestore.instance, FirebaseStorage.instance),
+      ChatRemoteDataSourceImpl(FirebaseFirestore.instance, cloudStorageService),
     );
     final getMessages = GetMessages(chatRepository);
 
@@ -116,12 +117,102 @@ class _ChatPageState extends State<ChatPage> {
                   ),
                 ),
                 Expanded(child: _messagesListView(state)),
+                _uploadProgressIndicator(state),
                 _sendMessageForm(context),
               ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _uploadProgressIndicator(ChatState state) {
+    // Chỉ hiển thị khi đang upload
+    if (!state.isUploading) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: _deviceWidth * 0.05,
+        vertical: _deviceHeight * 0.015,
+      ),
+      margin: EdgeInsets.symmetric(
+        horizontal: _deviceWidth * 0.03,
+        vertical: _deviceHeight * 0.01,
+      ),
+      decoration: BoxDecoration(
+        color: const Color.fromRGBO(30, 29, 37, 1.0),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: const Color.fromRGBO(0, 82, 218, 0.5),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              // Icon
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(0, 82, 218, 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.cloud_upload,
+                  color: Color.fromRGBO(0, 82, 218, 1.0),
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Progress info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Đang upload ảnh...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Progress bar
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: LinearProgressIndicator(
+                        value: state.uploadProgress,
+                        backgroundColor: Colors.white12,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color.fromRGBO(0, 82, 218, 1.0),
+                        ),
+                        minHeight: 6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Percentage
+              Text(
+                '${(state.uploadProgress * 100).toInt()}%',
+                style: const TextStyle(
+                  color: Color.fromRGBO(0, 82, 218, 1.0),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

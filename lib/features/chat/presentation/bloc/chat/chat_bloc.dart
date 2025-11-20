@@ -1,3 +1,4 @@
+import '/services/cloud_storage_service.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -80,23 +81,38 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     try {
-      // mở thư viện ảnh
+      // 1. Pick file
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
-        withData: true,
+        withData: true, // Quan trọng cho Web
       );
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
 
-        // upload file lên storage
-        final downloadUrl = await repository.uploadChatImage(
+        // 2. Emit uploading state
+        emit(state.copyWith(
+          isUploading: true,
+          uploadProgress: 0.0,
+        ));
+
+        // 3. Upload với progress callback
+        final cloudStorageService = CloudStorageService();
+        final downloadUrl = await cloudStorageService.saveChatImageToStorage(
           chatId,
           auth.user.uid,
           file,
+          onProgress: (progress) {
+            // Update progress trong state
+            emit(state.copyWith(uploadProgress: progress));
+          },
         );
 
-        // tạo message
+        if (downloadUrl == null) {
+          throw Exception('Upload failed');
+        }
+
+        // 4. Create message
         final newMessage = ChatMessage(
           senderID: auth.user.uid,
           type: MessageType.IMAGE,
@@ -104,11 +120,21 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           sentTime: DateTime.now(),
         );
 
-        // gửi message
+        // 5. Send message
         await repository.sendMessage(chatId, newMessage);
+
+        // 6. Clear uploading state
+        emit(state.copyWith(
+          isUploading: false,
+          uploadProgress: 0.0,
+        ));
       }
     } catch (e) {
-      emit(state.copyWith(errorMessage: e.toString()));
+      emit(state.copyWith(
+        errorMessage: e.toString(),
+        isUploading: false,
+        uploadProgress: 0.0,
+      ));
     }
   }
 
