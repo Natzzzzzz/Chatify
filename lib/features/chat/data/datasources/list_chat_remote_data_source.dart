@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rxdart/rxdart.dart';
+
 import '../../domain/entities/chat.dart';
 import '../../domain/entities/chat_user.dart';
 import '../../domain/entities/chat_message.dart';
@@ -30,14 +31,17 @@ class ListChatRemoteDataSourceImpl implements ListChatRemoteDataSource {
         final messageStream = firestore
             .collection('Chats')
             .doc(doc.id)
-            .collection('messages')
-            .orderBy('sent_time', descending: true)
+            .collection(' ')
+            // 🔁 dùng field mới 'sentAt' thay cho 'sent_time'
+            .orderBy('sentAt', descending: true)
             .limit(1)
             .snapshots()
             .map((msgSnap) {
           if (msgSnap.docs.isNotEmpty) {
-            return [
-              ChatMessageModel.fromJson(msgSnap.docs.first.data()),
+            final msgDoc = msgSnap.docs.first;
+            // 🔁 dùng fromDocument (hoặc fromJson với id nếu bạn prefer)
+            return <ChatMessage>[
+              ChatMessageModel.fromDocument(msgDoc),
             ];
           }
           return <ChatMessage>[];

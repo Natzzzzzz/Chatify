@@ -23,7 +23,7 @@ class TextMessageBubble extends StatelessWidget {
         ? [Color.fromRGBO(0, 136, 249, 1.0), Color.fromRGBO(0, 82, 218, 1.0)]
         : [Color.fromRGBO(51, 49, 68, 1.0), Color.fromRGBO(51, 49, 68, 1.0)];
     return Container(
-      height: height + (message.content.length / 20 * 6.0),
+      height: height + (message.text!.length / 20 * 6.0),
       width: width,
       padding: EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
@@ -41,7 +41,7 @@ class TextMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            message.content,
+            message.text!,
             style: TextStyle(
               color: Colors.white,
             ),
@@ -75,10 +75,10 @@ class ImageMessageBubble extends StatelessWidget {
     List<Color> _colorScheme = isOwnMessage
         ? [Color.fromRGBO(0, 136, 249, 1.0), Color.fromRGBO(0, 82, 218, 1.0)]
         : [Color.fromRGBO(51, 49, 68, 1.0), Color.fromRGBO(51, 49, 68, 1.0)];
-    DecorationImage _image = DecorationImage(
-        image: NetworkImage(message.content), fit: BoxFit.cover);
+    DecorationImage _image =
+        DecorationImage(image: NetworkImage(message.text!), fit: BoxFit.cover);
     return Container(
-      height: height + (message.content.length / 20 * 8.0),
+      height: height + (message.text!.length / 20 * 8.0),
       width: width,
       padding: EdgeInsets.symmetric(
           horizontal: width * 0.02, vertical: height * 0.03),

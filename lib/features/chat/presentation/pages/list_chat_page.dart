@@ -141,7 +141,7 @@ class _ChatsPageState extends State<ChatsPage> {
     if (chat.messages.isNotEmpty) {
       subtitleText = chat.messages.first.type != MessageType.TEXT
           ? "Media Attachment"
-          : chat.messages.first.content;
+          : chat.messages.first.text!;
     }
 
     return CustomListViewTileWithActivity(

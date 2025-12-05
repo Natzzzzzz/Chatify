@@ -62,20 +62,23 @@ class _ChatPageState extends State<ChatPage> {
 
     // Khởi tạo Repository và Usecase
     final cloudStorageService = CloudStorageService();
-    final chatRepository = ChatRepositoryImpl(
-      ChatRemoteDataSourceImpl(FirebaseFirestore.instance, cloudStorageService),
+    final remote = ChatRemoteDataSourceImpl(
+      FirebaseFirestore.instance,
+      cloudStorageService,
     );
+    final chatRepository = ChatRepositoryImpl(remote);
     final getMessages = GetMessages(chatRepository);
 
     return BlocProvider(
       create: (_) => ChatBloc(
+        remote: remote,
         chatId: widget.chat.uid,
         auth: _auth,
         scrollController: _messageListViewController,
         navigation: NavigationService(),
         repository: chatRepository,
         getMessages: getMessages,
-      )..add(LoadMessages(widget.chat.uid)),
+      )..add(ChatStarted(widget.chat.uid)),
       child: _buildUI(),
     );
   }
@@ -223,7 +226,7 @@ class _ChatPageState extends State<ChatPage> {
       );
     }
 
-    if (state.messages == null || state.messages!.isEmpty) {
+    if (state.messages.isEmpty) {
       return const Align(
         alignment: Alignment.center,
         child: Text(
@@ -235,9 +238,9 @@ class _ChatPageState extends State<ChatPage> {
 
     return ListView.builder(
       controller: _messageListViewController,
-      itemCount: state.messages!.length,
+      itemCount: state.messages.length,
       itemBuilder: (BuildContext context, int index) {
-        final ChatMessage message = state.messages![index];
+        final ChatMessage message = state.messages[index];
         final bool isOwnMessage = message.senderID == _auth.user.uid;
 
         return CustomChatListViewTile(
@@ -286,8 +289,13 @@ class _ChatPageState extends State<ChatPage> {
         onSaved: (_value) {
           final message = _value?.trim();
           if (message != null && message.isNotEmpty) {
-            context.read<ChatBloc>().add(UpdateCurrentMessage(message));
-            context.read<ChatBloc>().add(SendTextMessage(message));
+            context.read<ChatBloc>().add(
+                  ChatTextMessageSent(
+                    chatId: widget.chat.uid,
+                    senderId: _auth.user.uid,
+                    text: message,
+                  ),
+                );
           }
         },
         regEx: r"^(?!\s*$).+",
