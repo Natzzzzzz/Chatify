@@ -31,8 +31,7 @@ class ListChatRemoteDataSourceImpl implements ListChatRemoteDataSource {
         final messageStream = firestore
             .collection('Chats')
             .doc(doc.id)
-            .collection(' ')
-            // 🔁 dùng field mới 'sentAt' thay cho 'sent_time'
+            .collection('messages')
             .orderBy('sentAt', descending: true)
             .limit(1)
             .snapshots()

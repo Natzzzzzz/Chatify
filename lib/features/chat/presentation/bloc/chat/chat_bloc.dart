@@ -38,9 +38,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     required this.getMessages,
   })  : _remote = remote,
         super(const ChatState()) {
+    print(">>> ChatBloc CREATED hash = ${this.hashCode}");
     on<ChatStarted>(_onChatStarted);
     on<ChatTextMessageSent>(_onChatTextMessageSent);
-    // on<UpdateCurrentMessage>(_onUpdateCurrentMessage);
+    on<UpdateCurrentMessage>(_onUpdateCurrentMessage);
     on<SendImageMessage>(_onSendImageMessage);
     on<DeleteChat>(_onDeleteChat);
     on<GoBack>(_onGoBack);
@@ -50,35 +51,40 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     ChatStarted event,
     Emitter<ChatState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null));
+    print(">>> _onChatStarted called on ChatBloc hash = ${this.hashCode}");
+    print(">>> ChatStarted for chatId: ${event.chatId}");
 
     await _sub?.cancel();
 
-    _sub = _remote.getMessages(event.chatId).listen(
-      (messages) {
-        emit(state.copyWith(
+    await emit.forEach<List<ChatMessage>>(
+      _remote.getMessages(event.chatId),
+      onData: (messages) {
+        print(">>> onData received messages.length = ${messages.length}");
+        _scrollToBottom();
+
+        return state.copyWith(
           isLoading: false,
           messages: messages,
           errorMessage: null,
-        ));
-        _scrollToBottom();
+        );
       },
-      onError: (e) {
-        emit(state.copyWith(
+      onError: (error, stackTrace) {
+        print("🔥 onError: $error");
+        return state.copyWith(
           isLoading: false,
-          errorMessage: e.toString(),
-        ));
+          errorMessage: error.toString(),
+        );
       },
     );
   }
 
-  // void _onUpdateCurrentMessage(
-  //   UpdateCurrentMessage event,
-  //   Emitter<ChatState> emit,
-  // ) {
-  //   // nếu bạn vẫn giữ currentMessage trong ChatState
-  //   emit(state.copyWith(currentMessage: event.message));
-  // }
+  void _onUpdateCurrentMessage(
+    UpdateCurrentMessage event,
+    Emitter<ChatState> emit,
+  ) {
+    // nếu bạn vẫn giữ currentMessage trong ChatState
+    emit(state.copyWith(currentMessage: event.message));
+  }
 
   Future<void> _onChatTextMessageSent(
     ChatTextMessageSent event,

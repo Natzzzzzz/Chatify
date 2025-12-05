@@ -16,7 +16,6 @@ class ChatMessageModel extends ChatMessage {
     super.seenBy,
   });
 
-  /// Tạo từ DocumentSnapshot (khuyến khích dùng cách này trong stream)
   factory ChatMessageModel.fromDocument(
     DocumentSnapshot<Map<String, dynamic>> doc,
   ) {
@@ -24,7 +23,6 @@ class ChatMessageModel extends ChatMessage {
     return ChatMessageModel.fromJson(doc.id, data);
   }
 
-  /// Tạo từ Map + id (nếu bạn đã có id riêng)
   factory ChatMessageModel.fromJson(String id, Map<String, dynamic> json) {
     // map type string -> enum
     MessageType messageType;
@@ -48,30 +46,32 @@ class ChatMessageModel extends ChatMessage {
         messageType = MessageType.UNKNOWN;
     }
 
-    // hỗ trợ cả key cũ (sent_time) lẫn key mới (sentAt)
+    // hỗ trợ cả schema cũ (sent_time) lẫn schema mới (sentAt)
     final sentField = json["sentAt"] ?? json["sent_time"];
     final sentTimestamp = sentField as Timestamp;
+
+    // location: GeoPoint hoặc lat/lng cũ
+    GeoPoint? location;
+    if (json["location"] is GeoPoint) {
+      location = json["location"];
+    } else if (json["lat"] != null && json["lng"] != null) {
+      location = GeoPoint(
+        (json["lat"] as num).toDouble(),
+        (json["lng"] as num).toDouble(),
+      );
+    }
 
     return ChatMessageModel(
       id: id,
       chatId: json["chatId"] ?? json["chat_id"] ?? "",
       senderID: json["senderId"] ?? json["sender_id"] ?? "",
       type: messageType,
-
-      // text: ưu tiên field mới 'text', fallback về 'content' (data cũ)
       text: json["text"] ?? json["content"],
-
-      // file / image
       fileUrl: json["fileUrl"],
       fileName: json["fileName"],
       fileSize: json["fileSize"],
-
-      // location
-      location: json["location"] as GeoPoint?,
-
+      location: location,
       sentTime: sentTimestamp.toDate(),
-
-      // seenBy luôn là List<String>, default []
       seenBy: (json["seenBy"] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
@@ -80,7 +80,6 @@ class ChatMessageModel extends ChatMessage {
   }
 
   Map<String, dynamic> toJson() {
-    // enum -> string
     String messageType;
     switch (type) {
       case MessageType.TEXT:
@@ -103,30 +102,20 @@ class ChatMessageModel extends ChatMessage {
     }
 
     return {
+      "id": id,
       "chatId": chatId,
       "senderId": senderID,
       "type": messageType,
-
-      // text
       "text": text,
-
-      // file / image
       "fileUrl": fileUrl,
       "fileName": fileName,
       "fileSize": fileSize,
-
-      // location
       "location": location,
-
-      // thời gian gửi (schema mới)
       "sentAt": Timestamp.fromDate(sentTime),
-
-      // seen
       "seenBy": seenBy,
     };
   }
 
-  /// Helper tạo message text đơn giản (Phase 1)
   factory ChatMessageModel.createText({
     required String id,
     required String chatId,

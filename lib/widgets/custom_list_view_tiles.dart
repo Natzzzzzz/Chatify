@@ -128,14 +128,14 @@ class CustomChatListViewTile extends StatelessWidget {
   final double deviceHeight;
   final bool isOwnMessage;
   final ChatMessage message;
-  final ChatUser sender;
+  final ChatUser? sender;
 
   CustomChatListViewTile({
     required this.width,
     required this.deviceHeight,
     required this.isOwnMessage,
     required this.message,
-    required this.sender,
+    this.sender,
   });
 
   @override
@@ -149,12 +149,13 @@ class CustomChatListViewTile extends StatelessWidget {
             isOwnMessage ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          !isOwnMessage
+          (!isOwnMessage && sender != null)
               ? RoundedImageNetwork(
                   key: UniqueKey(),
-                  imagePath: sender.imageURL,
-                  size: width * 0.1)
-              : Container(),
+                  imagePath: sender!.imageURL,
+                  size: width * 0.1,
+                )
+              : const SizedBox.shrink(),
           SizedBox(
             width: width * 0.045,
           ),

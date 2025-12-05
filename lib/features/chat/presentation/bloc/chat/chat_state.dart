@@ -4,6 +4,7 @@ import '../../../domain/entities/chat_message.dart';
 class ChatState extends Equatable {
   final List<ChatMessage> messages;
   final bool isLoading;
+  final String? currentMessage;
   final String? errorMessage;
   final bool isUploading;
   final double uploadProgress;
@@ -11,6 +12,7 @@ class ChatState extends Equatable {
   const ChatState({
     this.messages = const [],
     this.isLoading = false,
+    this.currentMessage,
     this.errorMessage,
     this.isUploading = false,
     this.uploadProgress = 0.0,
@@ -19,6 +21,7 @@ class ChatState extends Equatable {
   ChatState copyWith({
     List<ChatMessage>? messages,
     bool? isLoading,
+    String? currentMessage,
     String? errorMessage,
     bool? isUploading,
     double? uploadProgress,
@@ -26,7 +29,8 @@ class ChatState extends Equatable {
     return ChatState(
       messages: messages ?? this.messages,
       isLoading: isLoading ?? this.isLoading,
-      errorMessage: errorMessage,
+      currentMessage: currentMessage ?? this.currentMessage,
+      errorMessage: errorMessage ?? this.errorMessage,
       isUploading: isUploading ?? this.isUploading,
       uploadProgress: uploadProgress ?? this.uploadProgress,
     );
@@ -36,6 +40,7 @@ class ChatState extends Equatable {
   List<Object?> get props => [
         messages,
         isLoading,
+        currentMessage,
         errorMessage,
         isUploading,
         uploadProgress,

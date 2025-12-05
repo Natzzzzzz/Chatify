@@ -1,4 +1,10 @@
 //Packages
+import 'package:chatify_app/features/chat/data/datasources/chat_remote_data_source.dart';
+import 'package:chatify_app/features/chat/data/repositories/chat_repository_impl.dart';
+import 'package:chatify_app/features/chat/domain/usecases/get_messages.dart';
+import 'package:chatify_app/features/chat/presentation/bloc/chat/chat_bloc.dart';
+import 'package:chatify_app/features/chat/presentation/bloc/chat/chat_event.dart';
+import 'package:chatify_app/services/cloud_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -153,7 +159,29 @@ class _ChatsPageState extends State<ChatsPage> {
       isActivity: chat.activity,
       onTap: () {
         _navigation.navigateToPage(
-          ChatPage(chat: chat),
+          BlocProvider(
+            create: (_) => ChatBloc(
+              remote: ChatRemoteDataSourceImpl(
+                FirebaseFirestore.instance,
+                CloudStorageService(),
+              ),
+              chatId: chat.uid,
+              auth: _auth,
+              scrollController: ScrollController(),
+              navigation: NavigationService(),
+              repository: ChatRepositoryImpl(ChatRemoteDataSourceImpl(
+                  FirebaseFirestore.instance, CloudStorageService())),
+              getMessages: GetMessages(
+                ChatRepositoryImpl(
+                  ChatRemoteDataSourceImpl(
+                    FirebaseFirestore.instance,
+                    CloudStorageService(),
+                  ),
+                ),
+              ),
+            )..add(ChatStarted(chat.uid)),
+            child: ChatPage(chat: chat),
+          ),
         );
       },
     );

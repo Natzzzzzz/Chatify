@@ -17,6 +17,10 @@ class NavigationService {
     );
   }
 
+  void navigateToRoute(Route route) {
+    navigatorKey.currentState?.push(route);
+  }
+
   void goBack<T extends Object?>([T? result]) {
     navigatorKey.currentState?.pop(result);
   }

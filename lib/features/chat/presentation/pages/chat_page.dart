@@ -60,32 +60,15 @@ class _ChatPageState extends State<ChatPage> {
     _deviceWidth = MediaQuery.of(context).size.width;
     _auth = context.read<AuthenticationProvider>();
 
-    // Khởi tạo Repository và Usecase
-    final cloudStorageService = CloudStorageService();
-    final remote = ChatRemoteDataSourceImpl(
-      FirebaseFirestore.instance,
-      cloudStorageService,
-    );
-    final chatRepository = ChatRepositoryImpl(remote);
-    final getMessages = GetMessages(chatRepository);
-
-    return BlocProvider(
-      create: (_) => ChatBloc(
-        remote: remote,
-        chatId: widget.chat.uid,
-        auth: _auth,
-        scrollController: _messageListViewController,
-        navigation: NavigationService(),
-        repository: chatRepository,
-        getMessages: getMessages,
-      )..add(ChatStarted(widget.chat.uid)),
-      child: _buildUI(),
-    );
+    return _buildUI(); // CHỈ THẾ NÀY, KHÔNG BỌC BLOC
   }
 
   Widget _buildUI() {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, state) {
+        print(
+            ">>> BlocBuilder rebuild, state.messages.length = ${state.messages.length}, isLoading = ${state.isLoading}");
+
         return Scaffold(
           body: Container(
             padding: EdgeInsets.symmetric(
@@ -227,6 +210,13 @@ class _ChatPageState extends State<ChatPage> {
     }
 
     if (state.messages.isEmpty) {
+      print(
+          ">>> UI using ChatBloc hash = ${context.read<ChatBloc>().hashCode}");
+      print(">>> ChatPage opened with chatId = ${widget.chat.uid}");
+      print(">>> Messages loaded (EMPTY): ${state.messages.length}");
+      print(
+          ">>> Members in chat: ${widget.chat.members.map((e) => e.uid).toList()}");
+
       return const Align(
         alignment: Alignment.center,
         child: Text(
@@ -236,6 +226,9 @@ class _ChatPageState extends State<ChatPage> {
       );
     }
 
+    // ⭐ Quan trọng: nếu vào đây nghĩa là state.messages đã có data
+    print(">>> BUILD LISTVIEW, messages length = ${state.messages.length}");
+
     return ListView.builder(
       controller: _messageListViewController,
       itemCount: state.messages.length,
@@ -243,13 +236,18 @@ class _ChatPageState extends State<ChatPage> {
         final ChatMessage message = state.messages[index];
         final bool isOwnMessage = message.senderID == _auth.user.uid;
 
+        final senderList = widget.chat.members
+            .where((m) => m.uid == message.senderID)
+            .toList();
+        final sender = senderList.isNotEmpty ? senderList.first : null;
+        print(">>> sender for msg[$index] = $sender");
+
         return CustomChatListViewTile(
           width: _deviceWidth * 0.8,
           deviceHeight: _deviceHeight,
           isOwnMessage: isOwnMessage,
           message: message,
-          sender:
-              widget.chat.members.firstWhere((m) => m.uid == message.senderID),
+          sender: sender,
         );
       },
     );

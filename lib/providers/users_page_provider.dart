@@ -1,6 +1,13 @@
 //Packages
+import 'package:chatify_app/features/chat/data/datasources/chat_remote_data_source.dart';
+import 'package:chatify_app/features/chat/data/repositories/chat_repository_impl.dart';
+import 'package:chatify_app/features/chat/domain/usecases/get_messages.dart';
+import 'package:chatify_app/features/chat/presentation/bloc/chat/chat_bloc.dart';
+import 'package:chatify_app/features/chat/presentation/bloc/chat/chat_event.dart';
+import 'package:chatify_app/services/cloud_storage_service.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
 //Services
@@ -83,12 +90,32 @@ class UsersPageProvider extends ChangeNotifier {
       List<String> _membersIDs =
           _selectedUsers.map((_user) => _user.uid).toList();
       _membersIDs.add(_auth.user.uid);
-      bool _isGroup = _selectedUsers.length > 1;
+      final bool isGroup = _selectedUsers.length > 1;
+
+      // Nếu là group, đặt groupName mặc định
+      final String? groupName =
+          isGroup ? _selectedUsers.map((u) => u.name).join(", ") : null;
+
+      // Avatar group có thể để null hoặc tạo random mặc định
+      final String? groupAvatar = null;
+
       DocumentReference? _doc = await _db.createChat({
-        "is_group": _isGroup,
-        "is_activity": false,
+        "isGroup": isGroup,
+        "groupName": groupName,
+        "groupAvatar": groupAvatar,
+        "isActivity": false,
         "members": _membersIDs,
+        "lastMessage": null,
+        "lastSentAt": null,
       });
+      if (_doc != null) {
+        await _db.sendTextMessage(
+          chatId: _doc.id,
+          senderId: _auth.user.uid,
+          text: isGroup ? "Group \"$groupName\" created." : "Say hi",
+        );
+      }
+
       //Navigate to Chat Page
       List<ChatUserModel> _members = [];
       for (var _uid in _membersIDs) {
@@ -96,22 +123,49 @@ class UsersPageProvider extends ChangeNotifier {
         Map<String, dynamic> _userData =
             _userSnapshot.data() as Map<String, dynamic>;
         _userData["uid"] = _userSnapshot.id;
-        _members.add(
-          ChatUserModel.fromJson(_userData),
-        );
+        _members.add(ChatUserModel.fromJson(_userData));
       }
-      ChatPage _chatPage = ChatPage(
-        chat: ChatModel(
-            uid: _doc!.id,
-            currentUserUid: _auth.user.uid,
-            members: _members,
-            messages: [],
-            activity: false,
-            group: _isGroup),
+
+      final ChatModel chat = ChatModel(
+        uid: _doc!.id,
+        currentUserUid: _auth.user.uid,
+        members: _members,
+        messages: [],
+        activity: false,
+        group: isGroup,
       );
+
       _selectedUsers = [];
       notifyListeners();
-      _nag.navigateToPage(_chatPage);
+
+      // ⭐ Navigate với BlocProvider
+      _nag.navigateToRoute(
+        MaterialPageRoute(
+          builder: (context) => BlocProvider(
+            create: (context) => ChatBloc(
+              remote: ChatRemoteDataSourceImpl(
+                FirebaseFirestore.instance,
+                CloudStorageService(),
+              ),
+              chatId: chat.uid,
+              auth: _auth,
+              scrollController: ScrollController(),
+              navigation: NavigationService(),
+              repository: ChatRepositoryImpl(ChatRemoteDataSourceImpl(
+                  FirebaseFirestore.instance, CloudStorageService())),
+              getMessages: GetMessages(
+                ChatRepositoryImpl(
+                  ChatRemoteDataSourceImpl(
+                    FirebaseFirestore.instance,
+                    CloudStorageService(),
+                  ),
+                ),
+              ),
+            )..add(ChatStarted(chat.uid)), // ⭐ Khởi động chat ngay
+            child: ChatPage(chat: chat),
+          ),
+        ),
+      );
     } catch (e) {
       print(e);
     }

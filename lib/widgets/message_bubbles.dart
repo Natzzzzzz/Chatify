@@ -11,26 +11,29 @@ class TextMessageBubble extends StatelessWidget {
   final double height;
   final double width;
 
-  TextMessageBubble(
-      {required this.isOwnMessage,
-      required this.message,
-      required this.height,
-      required this.width});
+  TextMessageBubble({
+    required this.isOwnMessage,
+    required this.message,
+    required this.height,
+    required this.width,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final text = message.text ?? ''; // ✨ tránh null
     List<Color> _colorScheme = isOwnMessage
         ? [Color.fromRGBO(0, 136, 249, 1.0), Color.fromRGBO(0, 82, 218, 1.0)]
         : [Color.fromRGBO(51, 49, 68, 1.0), Color.fromRGBO(51, 49, 68, 1.0)];
+
     return Container(
-      height: height + (message.text!.length / 20 * 6.0),
+      height: height + (text.length / 20 * 6.0),
       width: width,
-      padding: EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         gradient: LinearGradient(
           colors: _colorScheme,
-          stops: [0.3, 0.7],
+          stops: const [0.3, 0.7],
           begin: Alignment.centerLeft,
           end: Alignment.centerRight,
         ),
@@ -41,16 +44,12 @@ class TextMessageBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            message.text!,
-            style: TextStyle(
-              color: Colors.white,
-            ),
+            text,
+            style: const TextStyle(color: Colors.white),
           ),
           Text(
             timeago.format(message.sentTime),
-            style: TextStyle(
-              color: Colors.white70,
-            ),
+            style: const TextStyle(color: Colors.white70),
           ),
         ],
       ),
