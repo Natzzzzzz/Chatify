@@ -98,7 +98,7 @@ class UsersPageProvider extends ChangeNotifier {
 
       // Avatar group có thể để null hoặc tạo random mặc định
       final String? groupAvatar = null;
-
+      final creatorName = _auth.user.name;
       DocumentReference? _doc = await _db.createChat({
         "isGroup": isGroup,
         "groupName": groupName,
@@ -109,10 +109,11 @@ class UsersPageProvider extends ChangeNotifier {
         "lastSentAt": null,
       });
       if (_doc != null) {
-        await _db.sendTextMessage(
+        await _db.sendSystemMessage(
           chatId: _doc.id,
-          senderId: _auth.user.uid,
-          text: isGroup ? "Group \"$groupName\" created." : "Say hi",
+          text: isGroup
+              ? "\"$creatorName\" đã tạo nhóm này"
+              : "Hãy bắt đầu cuộc trò chuyện!",
         );
       }
 
@@ -161,7 +162,7 @@ class UsersPageProvider extends ChangeNotifier {
                   ),
                 ),
               ),
-            )..add(ChatStarted(chat.uid)), // ⭐ Khởi động chat ngay
+            )..add(ChatStarted(chat.uid)),
             child: ChatPage(chat: chat),
           ),
         ),

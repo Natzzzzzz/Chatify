@@ -24,10 +24,14 @@ class ListChatRemoteDataSourceImpl implements ListChatRemoteDataSource {
         .where('members', arrayContains: userId)
         .snapshots()
         .asyncExpand((snapshot) {
+      if (snapshot.docs.isEmpty) {
+        // 🔹 Quan trọng: emit luôn list rỗng
+        return Stream.value(<Chat>[]);
+      }
+
       final chatStreams = snapshot.docs.map((doc) {
         final data = doc.data();
 
-        // Stream tin nhắn cuối cùng (luôn update khi có thay đổi)
         final messageStream = firestore
             .collection('Chats')
             .doc(doc.id)
@@ -38,7 +42,6 @@ class ListChatRemoteDataSourceImpl implements ListChatRemoteDataSource {
             .map((msgSnap) {
           if (msgSnap.docs.isNotEmpty) {
             final msgDoc = msgSnap.docs.first;
-            // 🔁 dùng fromDocument (hoặc fromJson với id nếu bạn prefer)
             return <ChatMessage>[
               ChatMessageModel.fromDocument(msgDoc),
             ];
@@ -46,7 +49,6 @@ class ListChatRemoteDataSourceImpl implements ListChatRemoteDataSource {
           return <ChatMessage>[];
         });
 
-        // Kết hợp với info user
         return messageStream.asyncMap((messages) async {
           final members = await Future.wait(
             (data['members'] as List).map((uid) async {
@@ -65,7 +67,7 @@ class ListChatRemoteDataSourceImpl implements ListChatRemoteDataSource {
             currentUserUid: userId,
           );
         });
-      });
+      }).toList();
 
       return Rx.combineLatestList(chatStreams);
     });

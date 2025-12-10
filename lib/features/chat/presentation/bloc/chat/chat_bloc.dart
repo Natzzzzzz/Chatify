@@ -59,7 +59,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     await emit.forEach<List<ChatMessage>>(
       _remote.getMessages(event.chatId),
       onData: (messages) {
-        print(">>> onData received messages.length = ${messages.length}");
         _scrollToBottom();
 
         return state.copyWith(
@@ -111,7 +110,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     try {
       // 1. Pick file ảnh
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
+        type: FileType.any,
         withData: true, // quan trọng cho Web
       );
 
@@ -179,7 +178,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Emitter<ChatState> emit,
   ) async {
     await repository.deleteChat(chatId);
-    navigation.goBack();
+    navigation.goBack(true);
   }
 
   void _onGoBack(GoBack event, Emitter<ChatState> emit) {

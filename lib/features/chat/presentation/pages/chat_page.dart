@@ -60,15 +60,12 @@ class _ChatPageState extends State<ChatPage> {
     _deviceWidth = MediaQuery.of(context).size.width;
     _auth = context.read<AuthenticationProvider>();
 
-    return _buildUI(); // CHỈ THẾ NÀY, KHÔNG BỌC BLOC
+    return _buildUI();
   }
 
   Widget _buildUI() {
     return BlocBuilder<ChatBloc, ChatState>(
       builder: (context, state) {
-        print(
-            ">>> BlocBuilder rebuild, state.messages.length = ${state.messages.length}, isLoading = ${state.isLoading}");
-
         return Scaffold(
           body: Container(
             padding: EdgeInsets.symmetric(
@@ -210,13 +207,6 @@ class _ChatPageState extends State<ChatPage> {
     }
 
     if (state.messages.isEmpty) {
-      print(
-          ">>> UI using ChatBloc hash = ${context.read<ChatBloc>().hashCode}");
-      print(">>> ChatPage opened with chatId = ${widget.chat.uid}");
-      print(">>> Messages loaded (EMPTY): ${state.messages.length}");
-      print(
-          ">>> Members in chat: ${widget.chat.members.map((e) => e.uid).toList()}");
-
       return const Align(
         alignment: Alignment.center,
         child: Text(
@@ -225,9 +215,6 @@ class _ChatPageState extends State<ChatPage> {
         ),
       );
     }
-
-    // ⭐ Quan trọng: nếu vào đây nghĩa là state.messages đã có data
-    print(">>> BUILD LISTVIEW, messages length = ${state.messages.length}");
 
     return ListView.builder(
       controller: _messageListViewController,
@@ -240,7 +227,6 @@ class _ChatPageState extends State<ChatPage> {
             .where((m) => m.uid == message.senderID)
             .toList();
         final sender = senderList.isNotEmpty ? senderList.first : null;
-        print(">>> sender for msg[$index] = $sender");
 
         return CustomChatListViewTile(
           width: _deviceWidth * 0.8,
@@ -321,6 +307,22 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   Widget _imageMessageButton(BuildContext context) {
+    final double size = _deviceHeight * 0.04;
+    return SizedBox(
+      height: size,
+      width: size,
+      child: FloatingActionButton(
+        backgroundColor: const Color.fromRGBO(0, 82, 218, 1.0),
+        onPressed: () {
+          // Dispatch event tới ChatBloc
+          context.read<ChatBloc>().add(SendImageMessage());
+        },
+        child: const Icon(Icons.camera_enhance, color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _fileMessageButton(BuildContext context) {
     final double size = _deviceHeight * 0.04;
     return SizedBox(
       height: size,

@@ -1,4 +1,5 @@
 //Packages
+import 'package:chatify_app/widgets/system_message.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/rendering.dart';
@@ -140,8 +141,18 @@ class CustomChatListViewTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (message.type == MessageType.SYSTEM) {
+      return Container(
+        width: width,
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        alignment: Alignment.center,
+        child: SystemMessageBubble(message: message),
+      );
+    }
+
+    // ⭐ Các loại message còn lại: có avatar (nếu không phải của mình)
     return Container(
-      padding: EdgeInsets.only(bottom: 10, left: 10, right: 10),
+      padding: const EdgeInsets.only(bottom: 10, left: 10, right: 10),
       width: width,
       child: Row(
         mainAxisSize: MainAxisSize.max,
@@ -156,22 +167,46 @@ class CustomChatListViewTile extends StatelessWidget {
                   size: width * 0.1,
                 )
               : const SizedBox.shrink(),
-          SizedBox(
-            width: width * 0.045,
+          SizedBox(width: width * 0.045),
+          Flexible(
+            child: _buildMessageBubble(),
           ),
-          message.type == MessageType.TEXT
-              ? TextMessageBubble(
-                  isOwnMessage: isOwnMessage,
-                  message: message,
-                  height: deviceHeight * 0.06,
-                  width: width)
-              : ImageMessageBubble(
-                  isOwnMessage: isOwnMessage,
-                  message: message,
-                  height: deviceHeight * 0.3,
-                  width: width * 0.55),
         ],
       ),
     );
+  }
+
+  Widget _buildMessageBubble() {
+    switch (message.type) {
+      case MessageType.IMAGE:
+        return ImageMessageBubble(
+          isOwnMessage: isOwnMessage,
+          message: message,
+          height: deviceHeight * 0.3,
+          width: width * 0.55,
+        );
+      // case MessageType.FILE:
+      //   return FileMessageBubble(
+      //     isOwnMessage: isOwnMessage,
+      //     message: message,
+      //     width: width * 0.55,
+      //   );
+
+      // // sau này enum có LOCATION
+      // case MessageType.LOCATION:
+      //   return LocationMessageBubble(
+      //     isOwnMessage: isOwnMessage,
+      //     message: message,
+      //     width: width * 0.55,
+      //   );
+      case MessageType.TEXT:
+      default:
+        return TextMessageBubble(
+          isOwnMessage: isOwnMessage,
+          message: message,
+          height: deviceHeight * 0.06,
+          width: width * 0.7,
+        );
+    }
   }
 }

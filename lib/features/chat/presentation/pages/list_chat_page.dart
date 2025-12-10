@@ -110,23 +110,20 @@ class _ChatsPageState extends State<ChatsPage> {
   }
 
   Widget _chatsList(ChatsState state) {
-    if (state.isLoading) {
-      return const Expanded(
-        child: Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
-      );
+    // Ưu tiên error > !loading && empty > loading
+    if (state.errorMessage != null) {
+      return Expanded(child: Center(child: Text(state.errorMessage!)));
     }
-
-    if (state.chats == null || state.chats!.isEmpty) {
+    if (!state.isLoading && (state.chats == null || state.chats!.isEmpty)) {
       return const Expanded(
-        child: Center(
-          child: Text(
-            "No Chats Found.",
-            style: TextStyle(color: Colors.white),
-          ),
-        ),
-      );
+          child: Center(
+              child: Text(
+        "No Chats Found.",
+        style: TextStyle(color: Colors.white),
+      )));
+    }
+    if (state.isLoading) {
+      return const Expanded(child: Center(child: CircularProgressIndicator()));
     }
 
     return Expanded(
@@ -145,43 +142,63 @@ class _ChatsPageState extends State<ChatsPage> {
     String subtitleText = "";
 
     if (chat.messages.isNotEmpty) {
-      subtitleText = chat.messages.first.type != MessageType.TEXT
-          ? "Media Attachment"
-          : chat.messages.first.text!;
+      switch (chat.messages.first.type) {
+        case MessageType.IMAGE:
+          subtitleText = "Media Attachment";
+
+        case MessageType.TEXT:
+        default:
+          subtitleText = chat.messages.first.text!;
+      }
     }
 
-    return CustomListViewTileWithActivity(
-      height: _deviceHeight * 0.10,
-      title: chat.title,
-      subtitle: subtitleText,
-      imagePath: chat.imageURL,
-      isActive: isActive,
-      isActivity: chat.activity,
-      onTap: () {
-        _navigation.navigateToPage(
-          BlocProvider(
-            create: (_) => ChatBloc(
-              remote: ChatRemoteDataSourceImpl(
-                FirebaseFirestore.instance,
-                CloudStorageService(),
-              ),
-              chatId: chat.uid,
-              auth: _auth,
-              scrollController: ScrollController(),
-              navigation: NavigationService(),
-              repository: ChatRepositoryImpl(ChatRemoteDataSourceImpl(
-                  FirebaseFirestore.instance, CloudStorageService())),
-              getMessages: GetMessages(
-                ChatRepositoryImpl(
-                  ChatRemoteDataSourceImpl(
+    return Builder(
+      builder: (builderContext) {
+        return CustomListViewTileWithActivity(
+          height: _deviceHeight * 0.10,
+          title: chat.title,
+          subtitle: subtitleText,
+          imagePath: chat.imageURL,
+          isActive: isActive,
+          isActivity: chat.activity,
+          onTap: () async {
+            // builderContext có access đến ChatsBloc
+            final chatsBloc = builderContext.read<ChatsBloc>();
+
+            final needReload = await _navigation.navigateToPage(
+              BlocProvider(
+                create: (_) => ChatBloc(
+                  remote: ChatRemoteDataSourceImpl(
                     FirebaseFirestore.instance,
                     CloudStorageService(),
                   ),
-                ),
+                  chatId: chat.uid,
+                  auth: _auth,
+                  scrollController: ScrollController(),
+                  navigation: NavigationService(),
+                  repository: ChatRepositoryImpl(
+                    ChatRemoteDataSourceImpl(
+                      FirebaseFirestore.instance,
+                      CloudStorageService(),
+                    ),
+                  ),
+                  getMessages: GetMessages(
+                    ChatRepositoryImpl(
+                      ChatRemoteDataSourceImpl(
+                        FirebaseFirestore.instance,
+                        CloudStorageService(),
+                      ),
+                    ),
+                  ),
+                )..add(ChatStarted(chat.uid)),
+                child: ChatPage(chat: chat),
               ),
-            )..add(ChatStarted(chat.uid)),
-            child: ChatPage(chat: chat),
-          ),
+            );
+
+            if (needReload == true && mounted) {
+              chatsBloc.add(LoadChats(_auth.user.uid));
+            }
+          },
         );
       },
     );

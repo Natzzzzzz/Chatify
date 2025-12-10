@@ -39,8 +39,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
 
   @override
   Stream<List<ChatMessage>> getMessages(String chatId) {
-    print(">>> getMessages called with chatId = $chatId");
-
     return _firestore
         .collection('Chats')
         .doc(chatId)
@@ -48,23 +46,16 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
         .orderBy('sentAt', descending: false)
         .snapshots()
         .map((snapshot) {
-      print(">>> snapshot docs = ${snapshot.docs.length}");
-
       return snapshot.docs
           .map((doc) {
-            print(">>> parsing doc ${doc.id}");
             final data = doc.data() as Map<String, dynamic>?;
-
             if (data == null) {
-              print("🔥 NULL DATA AT DOCUMENT ${doc.id}");
               return null;
             }
 
             try {
               return ChatMessageModel.fromJson(doc.id, data);
             } catch (e, s) {
-              print("🔥 ERROR PARSING MESSAGE: $e");
-              print(s);
               return null;
             }
           })
@@ -73,14 +64,6 @@ class ChatRemoteDataSourceImpl implements ChatRemoteDataSource {
           .toList();
     });
 
-    // .snapshots()
-    // .map(
-    //   (snapshot) => snapshot.docs
-    //       .map(
-    //         (doc) => ChatMessageModel.fromDocument(doc),
-    //       )
-    //       .toList(),
-    // );
     // ChatMessageModel extends ChatMessage → trả về List<ChatMessage> OK
   }
 

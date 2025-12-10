@@ -1,3 +1,4 @@
+import 'package:chatify_app/features/chat/domain/entities/chat_message.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class ChatEvent extends Equatable {
@@ -39,6 +40,12 @@ class UpdateCurrentMessage extends ChatEvent {
 
   @override
   List<Object?> get props => [message];
+}
+
+class ChatMessageReceived extends ChatEvent {
+  final List<ChatMessage> messages;
+
+  ChatMessageReceived(this.messages);
 }
 
 class SendImageMessage extends ChatEvent {}
